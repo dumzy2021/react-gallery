@@ -20,9 +20,7 @@ export const LoginContent = () => {
     password: Yup.string().required("Password is required"),
   });
 
-  const handleSubmit = async (values, actions) => {
-    console.log(values, actions);
-
+  const handleSubmit = async (values) => {
     try {
       const { email, password } = values;
       setLoading(true);
@@ -30,10 +28,14 @@ export const LoginContent = () => {
       const redirectTo = searchParams.get("redirect") || "/dashboard";
       navigate(redirectTo, { replace: true });
     } catch (error) {
-      console.log("error", error?.message);
-      console.log("stringy", JSON.stringify(error));
+ 
+      const type = error?.message?.includes("(auth/invalid-credential)")
+        ? "Invalid Credentials"
+        : "";
       toastHandler({
-        message: "Failed to Sign in",
+        message: `Failed to Sign in: ${
+          type || error?.customData?._tokenResponse?.error?.message || ""
+        }`,
         type: toLower(ERROR),
       });
     }

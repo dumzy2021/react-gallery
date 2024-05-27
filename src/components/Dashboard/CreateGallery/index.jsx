@@ -5,7 +5,7 @@ import { toLower } from "lodash";
 import * as Yup from "yup";
 import { CustomFileInput, CustomInput, CustomTextarea } from "../../common";
 import {
-  COLLECT_DB_NAME,
+  GALLERY_DB_NAME,
   ERROR,
   FILE_SIZE,
   SUCCESS,
@@ -16,10 +16,12 @@ import { db, storage } from "../../../firebase";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "../../../contexts";
 
 export const CreateGalleryForm = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(null);
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const validationSchema = Yup.object().shape({
     caption: Yup.string()
@@ -44,7 +46,6 @@ export const CreateGalleryForm = () => {
   });
 
   const handleSubmit = async (values, actions) => {
-    console.log(values, actions);
     setLoading(true);
     const { caption, description, document } = values;
     try {
@@ -71,11 +72,12 @@ export const CreateGalleryForm = () => {
             try {
               const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
-              const docRef = await addDoc(collection(db, COLLECT_DB_NAME), {
+              const docRef = await addDoc(collection(db, GALLERY_DB_NAME), {
                 caption,
                 description,
                 image: downloadURL,
                 timestamp: serverTimestamp(),
+                uploadedBy: currentUser?.username,
               });
               toastHandler({
                 message: `Gallery created: ${docRef.id}`,
@@ -101,7 +103,7 @@ export const CreateGalleryForm = () => {
       }
     } catch (error) {
       toastHandler({
-        message: `Error uploading file:", ${error}`,
+        message: `Error uploading file: ${error}`,
         type: toLower(ERROR),
       });
       setLoading(false);

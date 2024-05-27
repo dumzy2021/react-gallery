@@ -57,6 +57,7 @@ export const photoTransform = (photos) => {
       height,
       caption: photo.caption,
       description: photo.description,
+      uploadedBy:photo?.uploadedBy,
       share: { url: photo.image, title: photo.caption },
       srcSet: breakpoints.map((breakpoint) => {
         const height = Math.round((photo.height / photo.width) * breakpoint);

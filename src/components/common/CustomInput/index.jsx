@@ -59,4 +59,5 @@ CustomInput.propTypes = {
   label: PropTypes.string.isRequired,
   type: PropTypes.oneOf(["text", "password", "email", "number"]).isRequired,
   name: PropTypes.string.isRequired,
+  required: PropTypes.bool,
 };

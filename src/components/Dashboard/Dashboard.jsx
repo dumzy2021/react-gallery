@@ -10,7 +10,7 @@ import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/styles.css";
 import { filterTypes, photoTransform } from "./helpers/data";
 import { Button, Dropdown, Modal } from "flowbite-react";
-import { COLLECT_DB_NAME, ERROR, SUCCESS, toastHandler } from "../../utils";
+import { GALLERY_DB_NAME, ERROR, SUCCESS, toastHandler } from "../../utils";
 import { db } from "../../firebase";
 import {
   collection,
@@ -22,8 +22,10 @@ import {
   query,
 } from "firebase/firestore";
 import { ImageSkeleton } from "../common";
+import { useAuth } from "../../contexts";
 export const DashboardContents = () => {
   const [index, setIndex] = useState(-1);
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -35,7 +37,7 @@ export const DashboardContents = () => {
 
     try {
       const q = query(
-        collection(db, COLLECT_DB_NAME),
+        collection(db, GALLERY_DB_NAME),
         orderBy("timestamp", type),
         limit(10)
       );
@@ -49,7 +51,6 @@ export const DashboardContents = () => {
       const transformGallery = photoTransform(newData);
 
       setGallery(transformGallery);
-      console.log("Data", newData);
     } catch (error) {
       toastHandler({
         message: error.message,
@@ -65,8 +66,7 @@ export const DashboardContents = () => {
   };
   const confirmDelete = async () => {
     try {
-      console.log("selectedPhotoIndex", selectedPhotoIndex);
-      const docRef = doc(db, COLLECT_DB_NAME, selectedPhotoIndex);
+      const docRef = doc(db, GALLERY_DB_NAME, selectedPhotoIndex);
       await deleteDoc(docRef);
       setGallery(gallery.filter((photo) => photo.id !== selectedPhotoIndex));
       toastHandler({
@@ -89,9 +89,12 @@ export const DashboardContents = () => {
     <>
       <div className="mb-6 flex flex-wrap gap-6 items-center justify-between">
         <h3 className="text-[#101828] font-semibold text-xl md:text-3xl mb-4">
-          My Gallery
+          {currentUser?.username ? (
+            <>Welcome {currentUser?.username}</>
+          ) : (
+            <>My Gallery</>
+          )}
         </h3>
-
         {!loading && gallery.length > 0 && (
           <Dropdown label={"Filter By"}>
             {filterTypes.map((data, index) => (
@@ -109,16 +112,16 @@ export const DashboardContents = () => {
 
       {loading && (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-          <ImageSkeleton length={20} />
+          <ImageSkeleton length={10} />
         </div>
       )}
 
       {!loading && gallery && (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {gallery.map((photo, index) => (
-            <div key={index} className="relative group">
+            <div key={index} className="relative group h-80 w-full">
               <img
-                className="h-full object-cover max-w-full rounded-lg cursor-pointer mb-4"
+                className="h-full object-cover max-w-full w-full  rounded-lg cursor-pointer mb-4"
                 src={photo.src}
               />
               <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
@@ -133,6 +136,12 @@ export const DashboardContents = () => {
                     Delete
                   </Button>
                 </div>
+
+                {photo.uploadedBy && (
+                  <p className="absolute bottom-2 left-2 text-white text-xs">
+                    Uploaded by: {photo.uploadedBy}
+                  </p>
+                )}
               </div>
             </div>
           ))}

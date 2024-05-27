@@ -1,14 +1,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import PropTypes from "prop-types";
 import { toLower } from "lodash";
-import { ERROR, toastHandler } from "../utils";
+import { ERROR, toastHandler, USERS_DB_NAME } from "../utils";
 
 const AuthContext = createContext();
 
@@ -19,12 +20,36 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const signup = (email, password) => {
-    return createUserWithEmailAndPassword(auth, email, password);
+
+  const fetchUserData = async (uid) => {
+    const userDoc = await getDoc(doc(db, USERS_DB_NAME, uid));
+    return userDoc.exists() ? userDoc.data() : null;
   };
 
-  const login = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
+  const signup = async (email, password, additionalData) => {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const user = userCredential.user;
+    await setDoc(doc(db, USERS_DB_NAME, user.uid), {
+      email: user.email,
+      ...additionalData,
+    });
+    const userData = await fetchUserData(user.uid);
+    setCurrentUser({ ...user, ...userData });
+  };
+
+  const login = async (email, password) => {
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const user = userCredential.user;
+    const userData = await fetchUserData(user.uid);
+    setCurrentUser({ ...user, ...userData });
   };
 
   const signout = async () => {
@@ -38,12 +63,17 @@ export const AuthProvider = ({ children }) => {
       });
     }
   };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userData = await fetchUserData(user.uid);
+        setCurrentUser({ ...user, ...userData });
+      } else {
+        setCurrentUser(null);
+      }
       setLoading(false);
     });
-
     return unsubscribe;
   }, []);
 

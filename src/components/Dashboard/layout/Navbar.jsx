@@ -26,15 +26,23 @@ export const NavbarContent = () => {
             }
           >
             <Dropdown.Header>
-              <span className="block truncate text-sm font-medium">
+              {currentUser?.username && (
+                <span className="block  text-xs mb-2">
+                  Username: {currentUser?.username}
+                </span>
+              )}
+
+              {currentUser?.lastName && currentUser?.firstName && (
+                <span className="block  text-xs mb-2">
+                  Name: {currentUser?.lastName} {currentUser?.firstName}
+                </span>
+              )}
+
+              <span className="block truncate text-xs font-medium">
                 {currentUser?.email}
               </span>
             </Dropdown.Header>
-            <Dropdown.Item as="span">
-              <Link to="/profile">Profile</Link>
-            </Dropdown.Item>
 
-            <Dropdown.Divider />
             <Dropdown.Item as="span" onClick={() => signout()}>
               <Link to="/auth"> Sign out</Link>
             </Dropdown.Item>

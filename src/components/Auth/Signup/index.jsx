@@ -7,11 +7,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import { CustomInput } from "../../common";
 import { ERROR, toastHandler } from "../../../utils";
+
 export const SignupContent = () => {
   const { signup } = useAuth();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const validationSchema = Yup.object().shape({
+    username: Yup.string().required("Username is required"),
+    firstName: Yup.string().required("First Name is required"),
+    lastName: Yup.string().required("Last Name is required"),
     email: Yup.string()
       .email("Please enter a valid email")
       .required("Email is required"),
@@ -21,37 +26,70 @@ export const SignupContent = () => {
       .required("Confirm password is required"),
   });
 
-  const handleSubmit = async (values, actions) => {
-    console.log(values, actions);
-
+  const handleSubmit = async (values) => {
     try {
-      const { email, password } = values;
+      const { email, password, username, firstName, lastName } = values;
       setLoading(true);
-      await signup(email, password);
+      await signup(email, password, { username, firstName, lastName });
       navigate("/dashboard", { replace: true });
     } catch (error) {
-      console.log("error", error?.message);
-      console.log("stringy", JSON.stringify(error));
       toastHandler({
-        message: "Failed to create an account",
+        message: `Failed to create an account: ${
+          error?.customData?._tokenResponse?.error?.message || ""
+        }`,
         type: toLower(ERROR),
       });
     }
     setLoading(false);
     // actions.resetForm();
   };
+
   return (
     <>
       <h3 className="text-[#101828] font-semibold text-3xl md:text-4xl mb-8">
         Sign Up
       </h3>
       <Formik
-        initialValues={{ password: "", email: "", confirmPassword: "" }}
+        initialValues={{
+          username: "",
+          firstName: "",
+          lastName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
         {({ isValid }) => (
           <Form>
+            <div className="mb-5">
+              <CustomInput
+                label="Username"
+                type="text"
+                name="username"
+                required
+                placeholder="Enter your username"
+              />
+            </div>
+            <div className="mb-5">
+              <CustomInput
+                label="First Name"
+                type="text"
+                name="firstName"
+                required
+                placeholder="Enter your first name"
+              />
+            </div>
+            <div className="mb-5">
+              <CustomInput
+                label="Last Name"
+                type="text"
+                name="lastName"
+                required
+                placeholder="Enter your last name"
+              />
+            </div>
             <div className="mb-5">
               <CustomInput
                 label="Email"
@@ -88,7 +126,6 @@ export const SignupContent = () => {
               {loading ? (
                 <>
                   <Spinner size="md" className=" mr-3" />
-
                   <span>Please wait..</span>
                 </>
               ) : (

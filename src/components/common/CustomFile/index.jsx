@@ -13,14 +13,12 @@ const fileToBase64 = (file) => {
   });
 };
 export const CustomFileInput = ({ accept, setFieldValue, ...props }) => {
-  const [field, meta, helpers] = useField(props);
+  const [ meta,] = useField(props);
   const { error } = meta;
   const hasError = error;
   const inputId = `${props.name}`;
   const [backgroundImage, setBackgroundImage] = useState("");
-  console.log("field", field);
-  console.log("meta", meta);
-  console.log("helpers", helpers);
+
 
   const handleChange = async (event) => {
     const file = event.currentTarget.files[0];
